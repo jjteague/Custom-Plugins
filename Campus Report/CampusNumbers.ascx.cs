@@ -101,12 +101,6 @@ namespace RockWeb.Plugins.com_DTS.CampusReport
             //grab the metrics from the block setting that we want to print out
             List<MetricCategoriesFieldAttribute.MetricCategoryPair> metricsFromSettings = Rock.Attribute.MetricCategoriesFieldAttribute.GetValueAsGuidPairs(GetAttributeValue("Metrics"));
             var schedulesFromSettings = GetAttributeValue("Schedules").Split(',').ToList();
-            //grab the schedules from the block setting so we know how to restrict the metric values when we request them
-            List<Schedule> schedules = new List<Schedule>();
-            if (schedulesFromSettings != null)
-            {
-                schedules = scheduleService.Queryable().Where(s => schedulesFromSettings.Contains(s.Guid.ToString())).ToList();
-            }
 
             //grab the sunday date from the dropdown so we know the date to ask for metric values
             DateTime sunday = Convert.ToDateTime(ddlSundayDates.SelectedValue.ToString());
@@ -121,8 +115,30 @@ namespace RockWeb.Plugins.com_DTS.CampusReport
             DateTime twoWeeksAgoLastYear = weekAgoLastYear.AddDays(-7);
             DateTime threeWeeksAgoLastYear = twoWeeksAgoLastYear.AddDays(-7);
             DateTime fourWeeksAgoLastYear = threeWeeksAgoLastYear.AddDays(-7);
+
             //grab the campus or All
-            string campus = ddlCampus.SelectedValue.ToString();
+            int campusId = Convert.ToInt32(ddlCampus.SelectedValue.ToString());
+            Campus campus = campusService.Queryable().First(c => c.Id == campusId);
+
+
+            //grab the schedules from the block setting so we know how to restrict the metric values when we request them
+            List<Schedule> schedules = new List<Schedule>();
+            List<Schedule> schedulesByCampus = new List<Schedule>();
+            if (schedulesFromSettings != null)
+            {
+                schedules = scheduleService.Queryable().Where(s => schedulesFromSettings.Contains(s.Guid.ToString())).ToList();
+                foreach (Schedule schedule in schedules)
+                {
+                    schedule.LoadAttributes();
+                    Rock.Web.Cache.AttributeValueCache value;
+                    schedule.AttributeValues.TryGetValue("Campus", out value);
+                    if (value.Value == campus.Guid.ToString())
+                    {
+                        schedulesByCampus.Add(schedule);
+                    }
+                }
+            }
+
 
             //test change
             //return the metrics we want to produce an HTML table/report for
@@ -175,7 +191,7 @@ namespace RockWeb.Plugins.com_DTS.CampusReport
                 table.Rows.Add(tableHeaderRow);
 
                 //now add schedule rows and print out actual metric values and calculations
-                foreach(Schedule schedule in schedules)
+                foreach(Schedule schedule in schedulesByCampus)
                 {
                     TableRow tr = new TableRow();
 
