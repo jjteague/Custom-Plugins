@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Entity;
+using System.Globalization;
 using System.Linq;
 using System.Web.UI.WebControls;
 using Rock;
@@ -91,6 +92,14 @@ namespace RockWeb.Plugins.com_DTS.CampusReport
             BindGrid();
         }
 
+        public static DateTime FirstDayOfWeek(DateTime date)
+        {
+            DayOfWeek fdow = CultureInfo.CurrentCulture.DateTimeFormat.FirstDayOfWeek;
+            int offset = fdow - date.AddDays(7).DayOfWeek;
+            DateTime fdowDate = date.AddDays(offset);
+            return fdowDate;
+        }
+
         private void BindGrid()
         {
             var rockContext = new RockContext();
@@ -101,12 +110,6 @@ namespace RockWeb.Plugins.com_DTS.CampusReport
             //grab the metrics from the block setting that we want to print out
             List<MetricCategoriesFieldAttribute.MetricCategoryPair> metricsFromSettings = Rock.Attribute.MetricCategoriesFieldAttribute.GetValueAsGuidPairs(GetAttributeValue("Metrics"));
             var schedulesFromSettings = GetAttributeValue("Schedules").Split(',').ToList();
-            //grab the schedules from the block setting so we know how to restrict the metric values when we request them
-            List<Schedule> schedules = new List<Schedule>();
-            if (schedulesFromSettings != null)
-            {
-                schedules = scheduleService.Queryable().Where(s => schedulesFromSettings.Contains(s.Guid.ToString())).ToList();
-            }
 
             //grab the sunday date from the dropdown so we know the date to ask for metric values
             DateTime sunday = Convert.ToDateTime(ddlSundayDates.SelectedValue.ToString());
@@ -116,17 +119,38 @@ namespace RockWeb.Plugins.com_DTS.CampusReport
             DateTime threeWeekAgoSunday = twoWeekAgoSunday.AddDays(-7);
             DateTime fourWeekAgoSunday = threeWeekAgoSunday.AddDays(-7);
             //also grab the 5 corresponding Sundays from a year ago
-            DateTime sundayLastYear = sunday.AddYears(-1);
+            DateTime sundayLastYear = FirstDayOfWeek( sunday.AddYears(-1));
             DateTime weekAgoLastYear = sundayLastYear.AddDays(-7);
             DateTime twoWeeksAgoLastYear = weekAgoLastYear.AddDays(-7);
             DateTime threeWeeksAgoLastYear = twoWeeksAgoLastYear.AddDays(-7);
             DateTime fourWeeksAgoLastYear = threeWeeksAgoLastYear.AddDays(-7);
+
             //grab the campus or All
-            string campus = ddlCampus.SelectedValue.ToString();
+            int campusId = Convert.ToInt32(ddlCampus.SelectedValue.ToString());
+            Campus campus = campusService.Queryable().First(c => c.Id == campusId);
+
+
+            //grab the schedules from the block setting so we know how to restrict the metric values when we request them
+            List<Schedule> schedules = new List<Schedule>();
+            List<Schedule> schedulesByCampus = new List<Schedule>();
+            if (schedulesFromSettings != null)
+            {
+                schedules = scheduleService.Queryable().Where(s => schedulesFromSettings.Contains(s.Guid.ToString())).ToList();
+                foreach (Schedule schedule in schedules)
+                {
+                    schedule.LoadAttributes();
+                    Rock.Web.Cache.AttributeValueCache value;
+                    schedule.AttributeValues.TryGetValue("Campus", out value);
+                    if (value.Value == campus.Guid.ToString())
+                    {
+                        schedulesByCampus.Add(schedule);
+                    }
+                }
+            }
 
 
             //return the metrics we want to produce an HTML table/report for
-            List<MetricValue> metricValues = metricValueService.Queryable().Where(mv => mv.MetricValueDateTime == sunday ||
+            List<MetricValue> metricValues = metricValueService.Queryable().Where(mv => mv.MetricValueType == MetricValueType.Measure).Where(mv => mv.MetricValueDateTime == sunday ||
             mv.MetricValueDateTime == weekAgoSunday ||
             mv.MetricValueDateTime == twoWeekAgoSunday ||
             mv.MetricValueDateTime == threeWeekAgoSunday ||
@@ -174,8 +198,24 @@ namespace RockWeb.Plugins.com_DTS.CampusReport
                 tableHeaderRow.Cells.Add(thLastFiveDiff);
                 table.Rows.Add(tableHeaderRow);
 
+
+                //total variables for this metric
+                int totalThisWeekVal = 0;
+                int totalLastWeekVal = 0;
+                int totalTwoWeeksVal = 0;
+                int totalThreeWeeksVal = 0;
+                int totalFourWeeksVal = 0;
+                    
+                int totalThisWeekLastYearVal = 0;
+                int totalLastWeekLastYearVal = 0;
+                int totalTwoWeeksLastYearVal = 0;
+                int totalThreeWeeksLastYearVal = 0;
+                int totalFourWeeksLastYearVal = 0;
+
+
+
                 //now add schedule rows and print out actual metric values and calculations
-                foreach(Schedule schedule in schedules)
+                foreach (Schedule schedule in schedulesByCampus)
                 {
                     TableRow tr = new TableRow();
 
@@ -202,48 +242,71 @@ namespace RockWeb.Plugins.com_DTS.CampusReport
                             if (mv.MetricValueDateTime == sunday)
                             {
                                 thisWeekVal = Convert.ToInt32( mv.YValue);
+                                totalThisWeekVal += thisWeekVal;
                             }
                             if (mv.MetricValueDateTime == weekAgoSunday)
                             {
                                 lastWeekVal = Convert.ToInt32(mv.YValue);
+                                totalLastWeekVal += lastWeekVal;
                             }
                             if (mv.MetricValueDateTime == twoWeekAgoSunday)
                             {
                                 twoWeeksVal = Convert.ToInt32(mv.YValue);
+                                totalTwoWeeksVal += twoWeeksVal;
                             }
                             if (mv.MetricValueDateTime == threeWeekAgoSunday)
                             {
                                 threeWeeksVal = Convert.ToInt32(mv.YValue);
+                                totalThreeWeeksVal += threeWeeksVal;
                             }
                             if (mv.MetricValueDateTime == fourWeekAgoSunday)
                             {
                                 fourWeeksVal = Convert.ToInt32(mv.YValue);
+                                totalFourWeeksVal += fourWeeksVal;
                             }
 
                             if (mv.MetricValueDateTime == sundayLastYear)
                             {
                                 thisWeekLastYearVal = Convert.ToInt32(mv.YValue);
+                                totalThisWeekLastYearVal += thisWeekLastYearVal;
                             }
                             if (mv.MetricValueDateTime == weekAgoLastYear)
                             {
                                 lastWeekLastYearVal = Convert.ToInt32(mv.YValue);
+                                totalLastWeekLastYearVal += lastWeekLastYearVal;
                             }
                             if (mv.MetricValueDateTime == twoWeeksAgoLastYear)
                             {
                                 twoWeeksLastYearVal = Convert.ToInt32(mv.YValue);
+                                totalTwoWeeksLastYearVal += twoWeeksLastYearVal;
                             }
                             if (mv.MetricValueDateTime == threeWeeksAgoLastYear)
                             {
                                 threeWeeksLastYearVal = Convert.ToInt32(mv.YValue);
+                                totalThreeWeeksLastYearVal += threeWeeksLastYearVal;
                             }
                             if (mv.MetricValueDateTime == fourWeeksAgoLastYear)
                             {
                                 fourWeeksLastYearVal = Convert.ToInt32(mv.YValue);
+                                totalFourWeeksLastYearVal += fourWeeksLastYearVal;
                             }
+                            
+                            
+                            
+                           
+
+                            
+                            
+                            
+                            
+                            
                         }
 
+                        
 
-                       
+
+
+
                     }
                     TableCell tcServiceTime = new TableCell();
                     TableCell tcThisWeek = new TableCell();
@@ -298,21 +361,96 @@ namespace RockWeb.Plugins.com_DTS.CampusReport
                     tr.Cells.Add(tcFiveWeekLastYear);
 
                     Label diffPeopleLabel = new Label();
-                    diffPeopleLabel.Text = String.Format("{0}", (fiveWeekThisYearVal - fiveWeekLastYearVal));
+                    diffPeopleLabel.Text = String.Format("{0}", (Math.Round(fiveWeekThisYearVal) - Math.Round(fiveWeekLastYearVal)));
                     tcDiffPeople.Controls.Add(diffPeopleLabel);
+                    tcDiffPeople.AddCssClass("diffPeople");
                     tr.Cells.Add(tcDiffPeople);
 
                     Label diffPercentLabel = new Label();
                     double diffPercentage = 0;
                     if (fiveWeekLastYearVal != 0)
                     {
-                        diffPercentage = ((double)(fiveWeekThisYearVal - fiveWeekLastYearVal) / fiveWeekLastYearVal) * 100;
+                        diffPercentage = ((double)(Math.Round(fiveWeekThisYearVal) - Math.Round(fiveWeekLastYearVal)) / Math.Round(fiveWeekLastYearVal)) * 100;
                     }
-                    diffPeopleLabel.Text = String.Format("{0}%", Math.Round(diffPercentage));
+                    diffPercentLabel.Text = String.Format("{0}%", Math.Round(diffPercentage));
                     tcDiffPercent.Controls.Add(diffPercentLabel);
+                    tcDiffPercent.AddCssClass("diffPercent");
                     tr.Cells.Add(tcDiffPercent);
+
                     table.Rows.Add(tr); 
                 }
+                TableRow totalTr = new TableRow();
+                //now add another row for totals
+                TableCell totalTcServiceTime = new TableCell();
+                TableCell totalTcThisWeek = new TableCell();
+                TableCell totalTcLastWeek = new TableCell();
+                TableCell totalTcTwoWeeks = new TableCell();
+                TableCell totalTcGrowth = new TableCell();
+                TableCell totalTcFiveWeekThisYear = new TableCell();
+                TableCell totalTcFiveWeekLastYear = new TableCell();
+                TableCell totalTcDiffPeople = new TableCell();
+                TableCell totalTcDiffPercent = new TableCell();
+
+                Label TotalserviceTimeLabel = new Label();
+                TotalserviceTimeLabel.Text = "Total";
+                totalTcServiceTime.Controls.Add(TotalserviceTimeLabel);
+                totalTr.Cells.Add(totalTcServiceTime);
+
+                Label TotalthisWeekLabel = new Label();
+                TotalthisWeekLabel.Text = String.Format("{0}", totalThisWeekVal);
+                totalTcThisWeek.Controls.Add(TotalthisWeekLabel);
+                totalTr.Cells.Add(totalTcThisWeek);
+
+                Label TotallastWeekLabel = new Label();
+                TotallastWeekLabel.Text = String.Format("{0}", totalLastWeekVal);
+                totalTcLastWeek.Controls.Add(TotallastWeekLabel);
+                totalTr.Cells.Add(totalTcLastWeek);
+
+                Label TotaltwoWeeksLabel = new Label();
+                TotaltwoWeeksLabel.Text = String.Format("{0}", totalTwoWeeksVal);
+                totalTcTwoWeeks.Controls.Add(TotaltwoWeeksLabel);
+                totalTr.Cells.Add(totalTcTwoWeeks);
+
+                Label TotalgrowthLabel = new Label();
+                double TotalgrowthPercentage = 0;
+                if (totalLastWeekVal != 0)
+                {
+                    TotalgrowthPercentage = ((double)(totalThisWeekVal - totalLastWeekVal) / totalLastWeekVal) * 100;
+                }
+                TotalgrowthLabel.Text = String.Format("{0}%", Math.Round(TotalgrowthPercentage)); // =((C6-D6)/D6*1)
+                totalTcGrowth.Controls.Add(TotalgrowthLabel);
+                totalTr.Cells.Add(totalTcGrowth);
+
+                Label TotalfiveWeekThisYearLabel = new Label();
+                double TotalfiveWeekThisYearVal = ((double)(totalThisWeekVal + totalLastWeekVal + totalTwoWeeksVal + totalThreeWeeksVal + totalFourWeeksVal) / 5);
+                TotalfiveWeekThisYearLabel.Text = String.Format("{0}", Math.Round(TotalfiveWeekThisYearVal)); // average of last 5 weeks together
+                totalTcFiveWeekThisYear.Controls.Add(TotalfiveWeekThisYearLabel);
+                totalTr.Cells.Add(totalTcFiveWeekThisYear);
+
+                Label TotalfiveWeekLastYearLabel = new Label();
+                double TotalfiveWeekLastYearVal = ((double)(totalThisWeekLastYearVal + totalLastWeekLastYearVal + totalTwoWeeksLastYearVal + totalThreeWeeksLastYearVal + totalFourWeeksLastYearVal) / 5);
+                TotalfiveWeekLastYearLabel.Text = String.Format("{0}", Math.Round(TotalfiveWeekLastYearVal)); // average of last 5 weeks last year together
+                totalTcFiveWeekLastYear.Controls.Add(TotalfiveWeekLastYearLabel);
+                totalTr.Cells.Add(totalTcFiveWeekLastYear);
+
+                Label TotaldiffPeopleLabel = new Label();
+                TotaldiffPeopleLabel.Text = String.Format("{0}", (Math.Round(TotalfiveWeekThisYearVal) - Math.Round(TotalfiveWeekLastYearVal)));
+                totalTcDiffPeople.Controls.Add(TotaldiffPeopleLabel);
+                totalTcDiffPeople.AddCssClass("diffPeople");
+                totalTr.Cells.Add(totalTcDiffPeople);
+
+                Label TotaldiffPercentLabel = new Label();
+                double TotaldiffPercentage = 0;
+                if (TotalfiveWeekLastYearVal != 0)
+                {
+                    TotaldiffPercentage = ((double)(Math.Round(TotalfiveWeekThisYearVal) - Math.Round(TotalfiveWeekLastYearVal)) / Math.Round(TotalfiveWeekLastYearVal)) * 100;
+                }
+                TotaldiffPercentLabel.Text = String.Format("{0}%", Math.Round(TotaldiffPercentage));
+                totalTcDiffPercent.Controls.Add(TotaldiffPercentLabel);
+                totalTcDiffPercent.AddCssClass("diffPercent");
+                totalTr.Cells.Add(totalTcDiffPercent);
+
+                table.Rows.Add(totalTr);
 
 
             }
