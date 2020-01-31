@@ -148,6 +148,8 @@
                                 <Rock:RockBoundField DataField="AnniversaryDay" HeaderText="Anniversary Day" SortExpression="AnniversaryDay" />
                                 <Rock:RockBoundField DataField="AnniversaryYear" HeaderText="Anniversary Year" SortExpression="AnniversaryYear" />
                                 <Rock:DateField DataField="Anniversary" HeaderText="Anniversary Date" SortExpression="Anniversary" />
+                                <Rock:RockBoundField DataField="Email" HeaderText="Email" SortExpression="Email" />
+                                <Rock:RockBoundField DataField="Address" HeaderText="Address" SortExpression="Address" />
                             </Columns>
                         </Rock:Grid>
                     </div>

@@ -12,6 +12,7 @@ using Rock;
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
+using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
 
@@ -90,8 +91,21 @@ public partial class BirthdaysAndAnniversaries : RockBlock
 
         groupMembers = FilterByBirthday(groupMembers);
 
+        Guid groupLocationTypeValueGuid = Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME.AsGuid();
+        RockUdfHelper.AddressNamePart addressNamePart = RockUdfHelper.AddressNamePart.Full;
+
+      
+
+        string addressTypeId = DefinedValueCache.Get(groupLocationTypeValueGuid).Id.ToString();
+        string addressComponent = addressNamePart.ConvertToString(false);
+
+
         if (sortProperty != null)
         {
+
+
+
+
             groupMemberGrid.DataSource = groupMembers.Select(gm => new MemberData()
             {
                 FirstName = gm.Person.FirstName,
@@ -104,7 +118,9 @@ public partial class BirthdaysAndAnniversaries : RockBlock
                 AnniversaryMonth = gm.Person.AnniversaryDate.HasValue ? gm.Person.AnniversaryDate.Value.Month : (int?)null,
                 AnniversaryDay = gm.Person.AnniversaryDate.HasValue ? gm.Person.AnniversaryDate.Value.Day : (int?)null,
                 AnniversaryYear = gm.Person.AnniversaryDate.HasValue ? gm.Person.AnniversaryDate.Value.Year : (int?)null,
-                Anniversary = gm.Person.AnniversaryDate
+                Anniversary = gm.Person.AnniversaryDate,
+                Email = gm.Person.Email,
+                Address = RockUdfHelper.ufnCrm_GetAddress(gm.Person.Id, addressTypeId, addressComponent)
             }).Distinct().Sort(sortProperty).ToList();
         }
         else
@@ -121,7 +137,9 @@ public partial class BirthdaysAndAnniversaries : RockBlock
                 AnniversaryMonth = gm.Person.AnniversaryDate.HasValue ? gm.Person.AnniversaryDate.Value.Month : (int?)null,
                 AnniversaryDay = gm.Person.AnniversaryDate.HasValue ? gm.Person.AnniversaryDate.Value.Day : (int?)null,
                 AnniversaryYear = gm.Person.AnniversaryDate.HasValue ? gm.Person.AnniversaryDate.Value.Year : (int?)null,
-                Anniversary = gm.Person.AnniversaryDate
+                Anniversary = gm.Person.AnniversaryDate,
+                Email = gm.Person.Email,
+                Address = RockUdfHelper.ufnCrm_GetAddress(gm.Person.Id, addressTypeId, addressComponent)
             }).Distinct().OrderBy(s => s.FirstName).ToList();
         }
 
@@ -245,6 +263,8 @@ internal class MemberData
     public int? AnniversaryMonth { get; internal set; }
     public int? AnniversaryDay { get; internal set; }
     public int? AnniversaryYear { get; internal set; }
+    public string Email { get; internal set; }
+    public string Address { get; internal set; }
     public string LastName { get; internal set; }
 
     public MemberData()
