@@ -139,7 +139,7 @@ public partial class MoveParticipantsLocation : RockBlock
 
     #region 
 
-    /// <summary>
+    /// <summary>future
     /// Method is used to fill dropdown by all members.
     /// Members dropdown will by filter by parameter GroupId.
     /// </summary>
@@ -160,7 +160,8 @@ public partial class MoveParticipantsLocation : RockBlock
             List<Location> locations = new List<Location>();
             GetLocationAndDescendents( locations, campusContext.Location );
 
-            locations = locations.Where( l => l.Id != locationId ).Where(l => l.LocationTypeValueId == 183).Where( l => l.GroupLocations.Where( gl => childGroupTypeIds.Contains( gl.Group.GroupTypeId ) || volunteerGroupTypeIds.Contains( gl.Group.GroupTypeId ) ).Count() > 0 ).ToList();
+            locations = locations.Where( l => l.Id != locationId ).Where(l => l.LocationTypeValueId == 183).ToList();
+
 
             foreach (Location l in locations)
             {
