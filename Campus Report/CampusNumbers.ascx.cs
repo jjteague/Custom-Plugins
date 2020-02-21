@@ -25,6 +25,7 @@ namespace RockWeb.Plugins.com_DTS.CampusReport
     [Description("Reporting block that shows attendance and metrics")]
     [SchedulesField("Schedules", "Schedules to report on", true)]
     [MetricCategoriesField("Metrics", "Metrics to report on", true)]
+    [TextField("Name of Service/Schedule Partition", "Set the partition name for the schedule or service (since the naming of this partition varies)", true, "", "", 0, "NameOfServiceTypePartition")]
     public partial class CampusNumbers : RockBlock
     {
         protected void Page_Load(object sender, EventArgs e)
@@ -138,12 +139,20 @@ namespace RockWeb.Plugins.com_DTS.CampusReport
                 schedules = scheduleService.Queryable().Where(s => schedulesFromSettings.Contains(s.Guid.ToString())).ToList();
                 foreach (Schedule schedule in schedules)
                 {
-                    schedule.LoadAttributes();
-                    Rock.Web.Cache.AttributeValueCache value;
-                    schedule.AttributeValues.TryGetValue("Campus", out value);
-                    if (value.Value == campus.Guid.ToString())
+                    try
                     {
-                        schedulesByCampus.Add(schedule);
+
+                        schedule.LoadAttributes();
+                        Rock.Web.Cache.AttributeValueCache value;
+                        schedule.AttributeValues.TryGetValue("Campus", out value);
+                        if (value.Value == campus.Guid.ToString())
+                        {
+                            schedulesByCampus.Add(schedule);
+                        }
+                    } catch (Exception e)
+                    {
+                        maCampusScheduleWarning.Show("There was an issue getting the campus associated with the \"" + schedule + "\" schedule. Be sure the schedules have a Campus entity attribute for this block to work.", ModalAlertType.Warning);
+                        return;
                     }
                 }
             }
@@ -235,76 +244,76 @@ namespace RockWeb.Plugins.com_DTS.CampusReport
                     foreach (MetricValue mv in metricValues)
                     {
                         //grab service time for this metric value
-                        MetricValuePartition mp = mv.MetricValuePartitions.Single(mvp => mvp.MetricPartition.Label == "Service");
-                        //if it matches the schedule we are looping through then print the row
-                        if (schedule.Id == mp.EntityId && metric.Id == mv.MetricId)
+                        try
                         {
-                            if (mv.MetricValueDateTime == sunday)
+
+                            string scheduleTypePartitionName = GetAttributeValue("NameOfServiceTypePartition");
+                            MetricValuePartition mp = mv.MetricValuePartitions.Single(mvp => mvp.MetricPartition.Label == scheduleTypePartitionName);
+                            //if it matches the schedule we are looping through then print the row
+                            if (schedule.Id == mp.EntityId && metric.Id == mv.MetricId)
                             {
-                                thisWeekVal = Convert.ToInt32( mv.YValue);
-                                totalThisWeekVal += thisWeekVal;
-                            }
-                            if (mv.MetricValueDateTime == weekAgoSunday)
-                            {
-                                lastWeekVal = Convert.ToInt32(mv.YValue);
-                                totalLastWeekVal += lastWeekVal;
-                            }
-                            if (mv.MetricValueDateTime == twoWeekAgoSunday)
-                            {
-                                twoWeeksVal = Convert.ToInt32(mv.YValue);
-                                totalTwoWeeksVal += twoWeeksVal;
-                            }
-                            if (mv.MetricValueDateTime == threeWeekAgoSunday)
-                            {
-                                threeWeeksVal = Convert.ToInt32(mv.YValue);
-                                totalThreeWeeksVal += threeWeeksVal;
-                            }
-                            if (mv.MetricValueDateTime == fourWeekAgoSunday)
-                            {
-                                fourWeeksVal = Convert.ToInt32(mv.YValue);
-                                totalFourWeeksVal += fourWeeksVal;
+                                if (mv.MetricValueDateTime == sunday)
+                                {
+                                    thisWeekVal = Convert.ToInt32( mv.YValue);
+                                    totalThisWeekVal += thisWeekVal;
+                                }
+                                if (mv.MetricValueDateTime == weekAgoSunday)
+                                {
+                                    lastWeekVal = Convert.ToInt32(mv.YValue);
+                                    totalLastWeekVal += lastWeekVal;
+                                }
+                                if (mv.MetricValueDateTime == twoWeekAgoSunday)
+                                {
+                                    twoWeeksVal = Convert.ToInt32(mv.YValue);
+                                    totalTwoWeeksVal += twoWeeksVal;
+                                }
+                                if (mv.MetricValueDateTime == threeWeekAgoSunday)
+                                {
+                                    threeWeeksVal = Convert.ToInt32(mv.YValue);
+                                    totalThreeWeeksVal += threeWeeksVal;
+                                }
+                                if (mv.MetricValueDateTime == fourWeekAgoSunday)
+                                {
+                                    fourWeeksVal = Convert.ToInt32(mv.YValue);
+                                    totalFourWeeksVal += fourWeeksVal;
+                                }
+
+                                if (mv.MetricValueDateTime == sundayLastYear)
+                                {
+                                    thisWeekLastYearVal = Convert.ToInt32(mv.YValue);
+                                    totalThisWeekLastYearVal += thisWeekLastYearVal;
+                                }
+                                if (mv.MetricValueDateTime == weekAgoLastYear)
+                                {
+                                    lastWeekLastYearVal = Convert.ToInt32(mv.YValue);
+                                    totalLastWeekLastYearVal += lastWeekLastYearVal;
+                                }
+                                if (mv.MetricValueDateTime == twoWeeksAgoLastYear)
+                                {
+                                    twoWeeksLastYearVal = Convert.ToInt32(mv.YValue);
+                                    totalTwoWeeksLastYearVal += twoWeeksLastYearVal;
+                                }
+                                if (mv.MetricValueDateTime == threeWeeksAgoLastYear)
+                                {
+                                    threeWeeksLastYearVal = Convert.ToInt32(mv.YValue);
+                                    totalThreeWeeksLastYearVal += threeWeeksLastYearVal;
+                                }
+                                if (mv.MetricValueDateTime == fourWeeksAgoLastYear)
+                                {
+                                    fourWeeksLastYearVal = Convert.ToInt32(mv.YValue);
+                                    totalFourWeeksLastYearVal += fourWeeksLastYearVal;
+                                }
+                            
+                            
+                            
                             }
 
-                            if (mv.MetricValueDateTime == sundayLastYear)
-                            {
-                                thisWeekLastYearVal = Convert.ToInt32(mv.YValue);
-                                totalThisWeekLastYearVal += thisWeekLastYearVal;
-                            }
-                            if (mv.MetricValueDateTime == weekAgoLastYear)
-                            {
-                                lastWeekLastYearVal = Convert.ToInt32(mv.YValue);
-                                totalLastWeekLastYearVal += lastWeekLastYearVal;
-                            }
-                            if (mv.MetricValueDateTime == twoWeeksAgoLastYear)
-                            {
-                                twoWeeksLastYearVal = Convert.ToInt32(mv.YValue);
-                                totalTwoWeeksLastYearVal += twoWeeksLastYearVal;
-                            }
-                            if (mv.MetricValueDateTime == threeWeeksAgoLastYear)
-                            {
-                                threeWeeksLastYearVal = Convert.ToInt32(mv.YValue);
-                                totalThreeWeeksLastYearVal += threeWeeksLastYearVal;
-                            }
-                            if (mv.MetricValueDateTime == fourWeeksAgoLastYear)
-                            {
-                                fourWeeksLastYearVal = Convert.ToInt32(mv.YValue);
-                                totalFourWeeksLastYearVal += fourWeeksLastYearVal;
-                            }
-                            
-                            
-                            
-                           
-
-                            
-                            
-                            
-                            
-                            
                         }
-
-                        
-
-
+                        catch (Exception e)
+                        {
+                            maCampusScheduleWarning.Show("There was an issue accessing the schedule/service partitions. Be sure to set a value in the block settings and confirm your metrics have schedule/service partitions<br>" + e.StackTrace, ModalAlertType.Warning);
+                            return;
+                        }
 
 
                     }
