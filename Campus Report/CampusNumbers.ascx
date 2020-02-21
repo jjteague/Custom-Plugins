@@ -88,7 +88,6 @@
 
 </style>
 <div class="row">
-
     <div class="col-xs-12 hidden-print">
 
         <div class="panel panel-block">
@@ -96,8 +95,9 @@
                 <div class="row">
                         
                     <div class="col-xs-4" style="margin:0px 0px 10px 0px">
+                            <Rock:ModalAlert ID="maCampusScheduleWarning" runat="server" />
                             <Rock:RockDropDownList ID="ddlCampus" runat="server" Label="Select Campus" Help="Select a campus or All to report on" />
-                            <Rock:RockDropDownList ID="ddlSundayDates" runat="server" Label="Sunday Dates" Help="Select a Sunday to show metrics" />
+                            <Rock:RockDropDownList ID="ddlSundayDates" runat="server" Label="Sunday Date" Help="Select a Sunday to show metrics" />
                         </div>
                     </div>
                 </div>
