@@ -724,6 +724,7 @@ namespace RockWeb.Plugins.com_DTS.GroupAttendanceDetailWithAnonymous
 
                 lMembers.Text = _group.GroupType.GroupMemberTerm.Pluralize();
                 lPendingMembers.Text = "Pending " + lMembers.Text;
+                numbAnonymousValue.Text = 0.ToString();
 
                 List<int> attendedIds = new List<int>();
 
