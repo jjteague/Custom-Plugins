@@ -1,4 +1,5 @@
 ﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="CampusNumbers.ascx.cs" Inherits="RockWeb.Plugins.com_DTS.CampusReport.CampusNumbers" %>
+
 <style>
     .table>thead>tr>th, .table>tbody>tr>th, .table>tfoot>tr>th, .table>thead>tr>td, .table>tbody>tr>td, .table>tfoot>tr>td {
         border: 0;
