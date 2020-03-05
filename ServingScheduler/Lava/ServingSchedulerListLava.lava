@@ -1,0 +1,39 @@
+﻿<div class='panel panel-default clearfix'>
+  <div class='panel-heading'>Serving Info <small class='pull-right'>
+    <a href='Serving/ToolBox'> Serving Tool Box</a>
+  </small>
+  </div>
+  
+    {% assign RequestItemCount = ServingSchedulerList | Size %}
+    
+    {% if RequestItemCount == 0 %}
+    <ul class="list-group list-group-panel">
+      <li class="list-group-item">
+      <div class="margin-all-md"> There are no serving request.</div>
+      </li>
+    </ul>
+    {% endif %}
+    <ul class="list-group list-group-panel">
+    {% for volunteer in ServingSchedulerList %}
+    <li class="list-group-item ">
+      <a href='{{volunteer.Url}}' >
+        <b>{{ volunteer.GroupName }}</b><br /><small> - {{ volunteer.ServingDateTime | Date:'M/dd hh:mm tt' }} </small>        
+      </a>
+      {% if volunteer.Status ==  "Declined" %}
+      <span class="badge badge-danger pull-righ" style="margin-top: -9px;">Declined</span>
+      {% else %}
+      {% if volunteer.Status ==  "Accepted" %}
+      <span class="badge badge-success pull-right" style="margin-top: -9px;">Accepted</span>
+      {% else %}
+      {%if volunteer.Status ==  "Open" %}
+      <span class="badge badge-secondary pull-right" style="margin-top: -9px;">Open</span>
+      {% else %}
+      <span class="badge badge-success pull-right" style="margin-top: -9px;"> {{ volunteer.Status }} </span>
+      {% endif %}
+      {% endif %}
+      {% endif %}
+    </li>
+  {% endfor %}
+  </ul>
+  
+</div>

@@ -1,0 +1,127 @@
+﻿<div class="panel panel-default">
+  <div class="panel-heading">
+    <i class="fa fa-handshake-o fa-fw"></i> Serving Requests
+  </div>
+
+  <div class="list-group">
+    {% assign RequestItemCount = RequestVolunteer | Size %}
+
+    {% if RequestItemCount == 0 %}
+    
+      <div class="margin-all-md"> There are no serving request.</div>
+    
+    {% endif %}
+
+    {% for volunteer in RequestVolunteer %}
+    {% capture argument %} '{{ volunteer.Id }}' , '{{volunteer.Status}}' , '{{volunteer.ServingWeekId}}' , '{{volunteer.GroupId}}', '{{volunteer.PersonId}}' {% endcapture %}
+    <a href="#" onclick="return OnClickEditStatus( {{argument}} );" class="list-group-item">
+      
+      {{ volunteer.ServingDateTime | | | Date:'MM/dd/yyyy hh:mm tt' }}
+      <span class="text-muted small">
+        <em>{{ volunteer.Position }} </em>
+      </span>
+      {% if volunteer.Status ==  "Declined" %}
+      <span class="badge badge-danger">Declined</span>
+      {% else %}
+      {% if volunteer.Status ==  "Accepted" %}
+      <span class="badge badge-success">Accepted</span>
+      {% else %}
+      {%if volunteer.Status ==  "Open" %}
+      <span class="badge badge-secondary">Open</span>
+      {% else %}
+      <span class="badge badge-success"> {{ volunteer.Status }} </span>
+      {% endif %}
+      {% endif %}
+      {% endif %}
+      <span class="pull-right text-muted small">
+        <em>{{ volunteer.GroupName }}&nbsp;&nbsp;</em>
+      </span>
+    </a>
+
+    {% endfor %}
+    <a href="#" onclick="{{ volunteer.Id | Postback:'EditStatus' }}" id="anchorChangeStatus" class="margin-l-sm" style="display:none;"></a>
+  </div>
+</div>
+
+<div id="mdStatusPopup" class="modal fade" role="dialog">
+  <div class="modal-dialog ">
+
+    <!-- Modal content-->
+    <div class="modal-content rock-modal rock-modal-frame">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h3 class="modal-title" id="modelHeader">Serving Details</h3>
+      </div>
+      <div class="modal-body" id="popupBody">
+        <div class="form-group rock-drop-down-list " id="divGrpPerson">
+          <div class="control-wrapper">
+            <label class="control-label" for="ddPopupStatus">
+              Serving Status<a class="help" href="#" tabindex="-1">
+                <i class="fa fa-question-circle"></i>
+              </a>
+              <div class="alert alert-info help-message" style="display:none">
+                <small>Status of the volunteer being scheduled (Open, Acceptd, or Declined)</small>
+              </div>
+            </label>
+            <select id="ddPopupStatus" class="form-control">
+              <option value="0">Open</option>
+              <option value="2">Declined</option>
+              <option value="1">Accepted</option>              
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-link" data-dismiss="modal" onclick="OnUpdateStatus('Cancel')">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="OnUpdateStatus('OK')">Submit</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script type="text/javascript">
+  // Method will execute on opening the Add member/position popup.
+  var ServingSchedulerId = '-1';
+  var sWeekId = '-1';
+  var groupId = '-1';
+  var personId = '-1';
+  function OnClickEditStatus(id, status, weekdid, grpid, pid) {
+  UpdateStatusPopup(status, id);
+  ServingSchedulerId = id;
+  sWeekId = weekdid;
+  groupId = grpid;
+  personId = pid;
+  return false;
+  }
+
+  function UpdateStatusPopup(txt, id) {
+  var model = $('#mdStatusPopup');
+  // SHowing the model window.
+  model.modal('show');
+  document.getElementById('popupBody').style = '';
+  var value = '0';
+
+  if (txt == 'Declined')
+  value = '2';
+  else if (txt == 'Accepted')
+  value = '1';
+  else if (txt == 'Tentative')
+  value = '3';
+  //$('#hdPopupStatusSelectedVal').val(value);
+  $('#ddPopupStatus').val(value);
+  //$('#hdPopupSelectedOccuIdVal').val(id);
+  model.show();
+  }
+
+  function OnUpdateStatus(action) {
+  var model = $('#mdStatusPopup');
+  model.modal('hide');
+  var value = $('#ddPopupStatus').val();
+  //$('#hdPopupStatusSelectedVal').val(value);
+  if (action == 'OK') {  
+  javascript:__doPostBack('ctl00_main_ctl33_ctl02_ctl06_upGrid','EditStatus^'+ ServingSchedulerId +'^'+value +'^'+ groupId +'^'+ sWeekId +'^'+ personId);
+  }
+  }
+
+</script>

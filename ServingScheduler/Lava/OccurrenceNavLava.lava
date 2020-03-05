@@ -1,0 +1,16 @@
+{% assign prevDisable = 'Disabled' %}
+{% assign nextDisable = 'Disabled' %}
+{% assign urlNext = " href='#' " %}
+{% assign urlPrev = " href='#' " %}
+
+{% if item.ServingDateTime != '' %}{% assign OccurrenceDate = item.ServingDateTime %}{% else %}{% assign OccurrenceDate = Now | SundayDate | Date:'MM/dd/yyyy' %}{% endif %}
+{% if item.PreviousValue != '' %}{% assign prevDisable = '' %} {% capture urlPrev %} href=/Scheduler/Edit?GroupId={{  item.GroupId }}&WeekId={{ item.PreviousValue }}&Action=EditDate{%endcapture%} {% endif %}
+{% if item.NextValue != '' %}{% assign nextDisable = '' %}{% capture urlNext %} href=/Scheduler/Edit?GroupId={{  item.GroupId }}&WeekId={{ item.NextValue }}&Action=EditDate{%endcapture%}{% endif %}
+
+
+
+<div class="heading col-md-12 col-sm-12 col-xs-12 text-center">
+    <div class="col-md-2 col-sm-1 col-xs-2 col-md-offset-1"><a tooltip="Previous occurrence" class="btn btn-info" {{prevDisable}} {{urlPrev}}>Prev</a></div>
+    <div class="col-md-6 col-sm-8 col-xs-8" style="text-align: center;"><h3 Style="margin-top:0px !important;">Current: {{ OccurrenceDate }}</h3></div>
+    <div class="col-md-2 col-sm-1 col-xs-2"><a  tooltip="Next occurrence" class="btn btn-success" {{nextDisable}} {{urlNext}}>Next</a></div>
+</div>
